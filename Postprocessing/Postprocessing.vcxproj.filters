@@ -64,5 +64,8 @@
     <None Include="noise.glsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="dithering.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

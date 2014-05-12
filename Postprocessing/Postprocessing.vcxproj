@@ -79,6 +79,7 @@
     <None Include="bloom.glsl" />
     <None Include="blur.glsl" />
     <None Include="color.glsl" />
+    <None Include="dithering.glsl" />
     <None Include="grayscale.glsl" />
     <None Include="invertColor.glsl" />
     <None Include="noise.glsl" />

@@ -247,6 +247,10 @@ void keyboard(uint8_t key, int32_t xmouse, int32_t ymouse)
 			currentProgram = sManager.find("noise");
 			setTime = true;
 			break; 
+		case 'd': 
+			currentProgram = sManager.find("dithering");
+			setTime = true;
+			break; 
 		default:
 			currentProgram = 0;
 			break;
@@ -276,6 +280,7 @@ int main (int argc, char **argv) {
 	sManager.add("sobel", "sobel.glsl");
 	sManager.add("ripple", "ripple.glsl");
 	sManager.add("noise", "noise.glsl");
+	sManager.add("dithering", "dithering.glsl");
 
 	init();
 
