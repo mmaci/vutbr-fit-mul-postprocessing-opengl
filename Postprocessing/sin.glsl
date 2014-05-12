@@ -1,6 +1,4 @@
 uniform sampler2D sampler0;
-uniform float time;
-
 
 void main(void)
 {

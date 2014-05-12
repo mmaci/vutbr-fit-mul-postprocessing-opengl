@@ -23,12 +23,13 @@ const GLfloat light_diffuse[]  = { 1.0f, 1.0f, 1.0f, 1.0f };
 const GLfloat light_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 const GLfloat light_position[] = { 2.0f, 5.0f, 5.0f, 0.0f };
  
-const GLfloat mat_ambient[]    = { 0.7f, 0.7f, 0.7f, 1.0f };
-const GLfloat mat_diffuse[]    = { 0.8f, 0.8f, 0.8f, 1.0f };
+const GLfloat mat_ambient[]    = { 0.1f, 0.05f, 0.05f, 1.0f };
+const GLfloat mat_diffuse[]    = { 1.f, 0.1f, 0.1f, 1.0f };
 const GLfloat mat_specular[]   = { 1.0f, 1.0f, 1.0f, 1.0f };
 const GLfloat high_shininess[] = { 100.0f }; 
 
 float rotation = 0.0f;
+bool setTime = false;
 
 void initFBDepthBuffer(void) {
 	// generate buffer and bind it
@@ -184,7 +185,10 @@ void display (void) {
 	renderTeapotSceneToTexture(fboTexture); // Render our teapot scene into our frame buffer
 	
 	glUseProgram(currentProgram);	
-	
+	if (setTime){
+		GLuint t = glGetUniformLocation(currentProgram, "time");
+		glUniform1f(t, static_cast<float>(glutGet(GLUT_ELAPSED_TIME))*0.001f);
+	}
 	// draw the texture	
 	drawTexture(fboTexture);
 
@@ -202,6 +206,7 @@ void reshape (int width, int height) {
 
 void keyboard(uint8_t key, int32_t xmouse, int32_t ymouse)
 {	
+	setTime = false;
 	switch (key) {
 		case '1':
 			currentProgram = sManager.find("blur");
@@ -222,7 +227,26 @@ void keyboard(uint8_t key, int32_t xmouse, int32_t ymouse)
 		case '5': 
 			currentProgram = sManager.find("sin");
 			break;
- 
+		case '6': 
+			currentProgram = sManager.find("bloom");
+			break; 
+		case '7': {
+			currentProgram = sManager.find("sobel");
+			glUseProgram(currentProgram);//malinko hack aby to naslo promenne :)
+			GLuint w = glGetUniformLocation(currentProgram, "width");
+			glUniform1f(w, static_cast<float>(WINDOW_WIDTH));
+			GLuint h = glGetUniformLocation(currentProgram, "height");
+			glUniform1f(h, static_cast<float>(WINDOW_HEIGHT));
+			break; 
+		}
+		case '8': 
+			currentProgram = sManager.find("ripple");
+			setTime = true;
+			break; 
+		case '9': 
+			currentProgram = sManager.find("noise");
+			setTime = true;
+			break; 
 		default:
 			currentProgram = 0;
 			break;
@@ -248,7 +272,10 @@ int main (int argc, char **argv) {
 	sManager.add("grayscale", "grayscale.glsl");
 	sManager.add("invert", "invertColor.glsl");
 	sManager.add("sin", "sin.glsl");
-
+	sManager.add("bloom", "bloom.glsl");
+	sManager.add("sobel", "sobel.glsl");
+	sManager.add("ripple", "ripple.glsl");
+	sManager.add("noise", "noise.glsl");
 
 	init();
 
