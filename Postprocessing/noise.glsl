@@ -3,8 +3,7 @@ uniform float time;
 
 float rand(vec2 n, float time)
 {
-  return 0.5 + 0.5 * 
-     fract(sin(dot(n.xy, vec2(12.9898*time, 78.233*time)))* 43758.5453);
+  return 0.5 + 0.5* fract(sin(dot(n.xy, vec2(12.9898*time, 78.233*time)))* 43758.5453);
 }
 void main(void)
 {
