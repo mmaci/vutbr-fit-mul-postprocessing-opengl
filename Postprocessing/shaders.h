@@ -7,9 +7,9 @@
 
 //inspirovano http://www.opengl.org/sdk/docs/tutorials/ClockworkCoders/loading.php
 unsigned long getFileLength(std::ifstream& file);
-int loadShader(char* filename, GLchar** ShaderSource, unsigned long* len);
+int loadShader(const char* filename, GLchar** ShaderSource, unsigned long* len);
 int unloadShader(GLubyte** ShaderSource);
-GLuint CreateAndCompileShader(char* filename, GLuint shaderType);
+GLuint CreateAndCompileShader(const char* filename, GLuint shaderType);
 bool HasGLSLSupport(void);
 
 void CheckFramebufferStatus();

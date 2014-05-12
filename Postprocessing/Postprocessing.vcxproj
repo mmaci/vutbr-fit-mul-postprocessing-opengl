@@ -68,9 +68,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="shadermanager.cpp" />
     <ClCompile Include="shaders.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="shadermanager.h" />
     <ClInclude Include="shaders.h" />
   </ItemGroup>
   <ItemGroup>

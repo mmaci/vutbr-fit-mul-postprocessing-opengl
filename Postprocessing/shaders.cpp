@@ -46,7 +46,7 @@ void CheckFramebufferStatus()
     }
 }
 
-int loadShader(char* filename, GLchar** ShaderSource, unsigned long* len)
+int loadShader(const char* filename, GLchar** ShaderSource, unsigned long* len)
 {
    std::ifstream file;
    file.open(filename, std::ios::in); // opens as ASCII!
@@ -87,7 +87,7 @@ int unloadShader(GLubyte** ShaderSource)
    return 0;
 }
 
-GLuint CreateAndCompileShader(char* filename, GLuint shaderType)
+GLuint CreateAndCompileShader(const char* filename, GLuint shaderType)
 {
 	GLuint fragmentShader = glCreateShader(shaderType);
 	GLchar * fragmentSource;

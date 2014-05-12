@@ -1,6 +1,5 @@
 uniform sampler2D sampler0;
 
-
 void main(void)
 {
   	float offset = 0.005;

@@ -3,17 +3,20 @@
 #include <glut.h>
 #include <cstdint>
 
-#include <iostream> // Allow us to print to the console
+#include <iostream>
 
 #include "shaders.h"
+#include "shadermanager.h"
 
+ShaderManager sManager;
 
-GLuint fbo; // The frame buffer object
-GLuint fboDepth; // The depth buffer for the frame buffer object
-GLuint fboTexture; // The texture object to write our frame buffer object to
+GLuint fbo;
+GLuint fboDepth;
+GLuint fboTexture;
+GLuint currentProgram;
 
-const uint16_t WINDOW_WIDTH = 500; // The width of our window
-const uint16_t WINDOW_HEIGHT = 500; // The height of our window
+const uint16_t WINDOW_WIDTH = 500;
+const uint16_t WINDOW_HEIGHT = 500;
 
 const GLfloat light_ambient[]  = { 0.0f, 0.0f, 0.0f, 1.0f };
 const GLfloat light_diffuse[]  = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -25,9 +28,7 @@ const GLfloat mat_diffuse[]    = { 0.8f, 0.8f, 0.8f, 1.0f };
 const GLfloat mat_specular[]   = { 1.0f, 1.0f, 1.0f, 1.0f };
 const GLfloat high_shininess[] = { 100.0f }; 
 
-float rotation = 0.0f; // The angle of rotation in degrees for our teapot
-
-GLuint program, fragment;
+float rotation = 0.0f;
 
 void initFBDepthBuffer(void) {
 	// generate buffer and bind it
@@ -45,7 +46,7 @@ void initFBDepthBuffer(void) {
 void initFBTexture(void) {
 	// generate texture and bind it
 	glGenTextures(1, &fboTexture);
-	glBindTexture(GL_TEXTURE_2D, fboTexture); // Bind the texture fboTexture
+	glBindTexture(GL_TEXTURE_2D, fboTexture);
 
 	// setup texture
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -140,7 +141,6 @@ void renderTeapotSceneToTexture(GLuint texture) {
 		rotation = 0.0f;
 }
 
-
 void drawTexture(GLuint texture)
 {
 	// generate mipmap
@@ -183,9 +183,7 @@ void display (void) {
 	// render the teapot inside a texture
 	renderTeapotSceneToTexture(fboTexture); // Render our teapot scene into our frame buffer
 	
-	// load postprocess shader
-	glUseProgram(program);
-	// glUniform1i(glGetUniformLocation(program, "mode"), 1);
+	glUseProgram(currentProgram);	
 	
 	// draw the texture	
 	drawTexture(fboTexture);
@@ -202,6 +200,36 @@ void reshape (int width, int height) {
 	glMatrixMode(GL_MODELVIEW);
 }
 
+void keyboard(uint8_t key, int32_t xmouse, int32_t ymouse)
+{	
+	switch (key) {
+		case '1':
+			currentProgram = sManager.find("blur");
+			break;
+ 
+		case '2': 
+			currentProgram = sManager.find("nightvision");
+			break;
+
+		case '3': 
+			currentProgram = sManager.find("grayscale");
+			break;
+
+		case '4': 
+			currentProgram = sManager.find("invert");
+			break;
+		
+		case '5': 
+			currentProgram = sManager.find("sin");
+			break;
+ 
+		default:
+			currentProgram = 0;
+			break;
+	}
+	glutPostRedisplay();
+}
+
 
 int main (int argc, char **argv) {
 	glutInit(&argc, argv);
@@ -214,16 +242,17 @@ int main (int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	// compile shader
-	program = glCreateProgram();
-	if (HasGLSLSupport()) {	
-		fragment = CreateAndCompileShader("blur.glsl", GL_FRAGMENT_SHADER);//nacte dany soubor s kodem shaderu
-		glAttachShader(program, fragment); // jednotlive shadery priradi k programu
-	}
-	glLinkProgram(program);
+	// compile shaders
+	sManager.add("nightvision", "color.glsl");	
+	sManager.add("blur", "blur.glsl");
+	sManager.add("grayscale", "grayscale.glsl");
+	sManager.add("invert", "invertColor.glsl");
+	sManager.add("sin", "sin.glsl");
+
 
 	init();
 
+	glutKeyboardFunc(keyboard);
 	glutDisplayFunc(display);
 	glutIdleFunc(display);
 	glutReshapeFunc(reshape);
