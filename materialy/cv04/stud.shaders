@@ -1,0 +1,182 @@
+//--------------------------------------------------
+// Vstupne data pre vertex shader:
+// !Nemenit!
+struct VS_INPUT
+{
+	// Suradnice pozicie v objektovom priestore:
+    float3 PosCoord   : POSITION0;
+
+	// Suradnice textury:
+    float2 TexCoord    : TEXCOORD0;
+};
+
+
+//--------------------------------------------------
+// Vystupne data z vertex shaderu:
+struct VS_OUTPUT
+{
+	// Suradnice pozicie v pohladovom priestore
+	// Tento udaj (na rozdiel od ostatnych parametrov) sa nepropaguje
+	// do pixel shaderu
+	// Tento udaj sa pouzije pri rasterizacii
+    float4 Position      : POSITION0;
+
+	// Suradnice textury:
+    float2 TexCoord      : TEXCOORD0;
+
+	// Suradnice pozicie v objektovom priestore
+    float4 PosObjectCoord: TEXCOORD1;
+
+	// Suradnice pozicie v pohladovom priestore
+	float4 PosProjCoord : TEXCOORD2;
+};
+
+
+//--------------------------------------------------
+// Vstupne data pre pixel shader
+// Pixel shader je obdoba fragment shaderu v OpenGL
+// PS_INPUT musi obsahovat polozky z VS_OUTPUT vez Position:POSITION0
+struct PS_INPUT
+{
+	// Popis viz. VS_OUTPUT:
+    float2 TexCoord      : TEXCOORD0;
+    float4 PosObjectCoord: TEXCOORD1;
+	float4 PosProjCoord : TEXCOORD2;
+};
+
+
+//-------------------------------------------------
+// Vystupne data z pixel shaderu:
+struct PS_OUTPUT
+{
+	// farba, ktora sa zapise do vysledneho snimku:
+    float4 Color      : COLOR;
+};
+
+
+
+//-------------------------------------------------
+// VERTEX BUFFER:
+// (Modifikujte podla potreby)
+
+
+// Transformacna world-view-projection matica pre VS
+// Ak chcete vytvorit vlastnu maticu, modifikujte v main.cpp GetWorldViewProjectionMat
+float4x4 WorldViewProj;
+
+// Funkcia vertex shadera:
+VS_OUTPUT vs_main( in VS_INPUT In )
+{
+	// vystupna premenna z vertex shadera:
+    VS_OUTPUT Out;                                   
+
+	// Vyvori homogenne suradnice:
+	float4 pos4 = float4(In.PosCoord.x, In.PosCoord.y, In.PosCoord.z, 1);
+    
+	// Transformuje suradnice z objektoveho priestore do priestoru pohladu
+	// (Z model space do view space)
+	Out.Position = mul(pos4, WorldViewProj);
+    Out.TexCoord = In.TexCoord;                     
+	Out.PosObjectCoord = pos4;
+    Out.PosProjCoord  = Out.Position;
+    
+	return Out;
+}
+
+
+
+
+
+//-------------------------------------------------
+// PIXEL BUFFER:
+
+
+// Textura:
+sampler2D Tex0;
+
+
+// TODO: experimentujte a predvedte zaujimave efekty, za kazdy efekt: BOD!
+//           - prevod do ciernobielej skaly a uprava gammy
+//                http://en.wikipedia.org/wiki/Grayscale
+//                http://en.wikipedia.org/wiki/Gamma_correction
+//           - rozostrenie obrazu:
+//                napr. http://en.wikipedia.org/wiki/Kernel_(image_processing) alebo akekolvek vlastne
+//           - vlastny efekt
+//                napr. http://en.wikipedia.org/wiki/Image_distortion
+//           
+PS_OUTPUT ps_main( in PS_INPUT In )
+{
+    PS_OUTPUT Out;                               
+
+	/////////////////////////////////////////////
+	// Demonstracia jednoducheho sumu:
+	//
+	// ziska hodnotu texelu z textury:
+    //Out.Color = tex2D(Tex0, In.TexCoord);  
+	//
+	// ziska sa metanahodne cislo v rozsahu <0,2):
+	// funkcia frac vracia desatinnu cast cisla       
+	//float4 magicMult = frac (In.PosObjectCoord*10000000) * 2;
+	//
+	// vystupne data:
+	//Out.Color *= magicMult;  
+	/////////////////////////////////////////////
+	
+
+	/////////////////////////////////////////////
+	// Prevod do ciernobielej skaly a uprava gammy:
+    //float4 color = tex2D(Tex0, In.TexCoord);
+	//
+	//-------------------------------------------
+	//                 TODO:
+	//
+	//float gray =pow((0.299* color[0] + 0.587 * color[1] + 0.114* color[2]),  0.5) * color[3];
+	//-------------------------------------------
+	//Out.Color = float4 (gray,gray,gray,gray);
+	/////////////////////////////////////////////
+	
+	
+	/////////////////////////////////////////////
+	// Rozostrenie obrazu:  
+	//
+	//float offset = 0.005;
+	//Out.Color = float4(0,0,0,0);
+	//for (int x = -1; x <= 1; x++)
+	//	for (int y = -1; y <= 1; y++)
+	//	{
+	//------------------------------------------
+	//                  TODO:
+	//		float2 offset2 = float2 (x,y) * offset;
+	//		float2 coord =  In.TexCoord + offset2;
+	//		Out.Color += tex2D(Tex0, coord)/9; 
+	//------------------------------------------
+	//	}
+	/////////////////////////////////////////////
+	
+
+
+	/////////////////////////////////////////////
+	// vlastny efekt:
+    //-------------------------------------------
+	//                  TODO:
+	//
+	//-------------------------------------------
+	/////////////////////////////////////////////
+	//Out.Color = tex2D(Tex0, In.TexCoord); //puvodni
+
+	//Out.Color = tex2D( Tex0 , In.TexCoord)*3;
+    
+	
+	In.TexCoord[0] = In.TexCoord[0]  + (sin(In.TexCoord[0]*100)*0.03); 
+	float4 color = tex2D(Tex0, In.TexCoord); //vstup
+	//Out.Color = 1.0 -color;
+	Out.Color = float4(1.0- color[0], 1.0- color[1] ,1.0- color[2],1.0- color[3]);
+	//Out.Color = tex2D( Tex0 , In.TexCoord); 
+
+	//Out.Color[1] -= tex2D( Tex0 , In.TexCoord + (1/100))[1]; 
+	//Out.Color[2] += tex2D( Tex0 , In.TexCoord + (1/200))[2]; 
+	//Out.Color[3] -= tex2D( Tex0 , In.TexCoord + (1/300))[3];
+
+	return Out;                                  
+}
+
