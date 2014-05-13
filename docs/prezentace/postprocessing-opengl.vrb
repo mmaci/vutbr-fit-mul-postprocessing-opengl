@@ -1,0 +1,15 @@
+\frametitle{\textbf{Výsledky}}
+
+\begin{center}
+
+\begin{tabular}{lll}
+\includegraphics[height=35mm]{blur.jpg} &
+\includegraphics[height=35mm]{sobel.jpg} &
+\includegraphics[height=35mm]{invert.jpg}
+\end{tabular}
+
+\vspace{10mm}
+viz. ukázka programu ...
+
+\end{center}
+
