@@ -10,9 +10,9 @@
 
 ShaderManager sManager;
 
-GLuint fbo;
+GLuint fbo, fbo2;
 GLuint fboDepth;
-GLuint fboTexture;
+GLuint txt, txt2;
 GLuint currentProgram;
 
 const uint16_t WINDOW_WIDTH = 500;
@@ -31,51 +31,66 @@ const GLfloat high_shininess[] = { 100.0f };
 float rotation = 0.0f;
 bool setTime = false;
 
-void initFBDepthBuffer(void) {
-	// generate buffer and bind it
-	glGenRenderbuffersEXT(1, &fboDepth);
-	glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, fboDepth);
-		
-	// attach the buffer
-	glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, WINDOW_WIDTH, WINDOW_HEIGHT);
-	glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, fboDepth);
+GLuint getDepthTexture(void) {
 
-	// unbind
-	glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
+	GLuint tex;
+
+	glGenTextures(1, &tex);
+
+	glBindTexture(GL_TEXTURE_2D, tex);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 
+		WINDOW_WIDTH,
+						WINDOW_HEIGHT, 
+						0, GL_DEPTH_COMPONENT, GL_FLOAT,
+						NULL); 
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return tex;
 }
 
-void initFBTexture(void) {
+GLuint getTexture() {
+	GLuint texture;
+
 	// generate texture and bind it
-	glGenTextures(1, &fboTexture);
-	glBindTexture(GL_TEXTURE_2D, fboTexture);
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
 
 	// setup texture
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);	
 
 	// create the texture
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);	
 
 	// unbind
 	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return texture;
 }
 
-uint8_t initFB(void) {
+GLuint getFB(GLuint& texture) {
 
-	initFBDepthBuffer();
-	initFBTexture();
+	GLuint fb;
 
 	// generate framebuffer and bind it
-	glGenFramebuffersEXT(1, &fbo);
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo); 
+	glGenFramebuffersEXT(1, &fb);
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fb); 
 
-	// attach the texture to the frame buffer
-	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, fboTexture, 0);
-	// attach the depth buffer to the frame buffer
-	glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, fboDepth);
+	texture = getTexture();	
+	glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture, 0);		
+
+	GLuint depthFBO;
+	depthFBO = getDepthTexture();
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthFBO, 0);
 
 
 	if (glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT) {
@@ -85,17 +100,26 @@ uint8_t initFB(void) {
 
 	// unbind
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0); 
+
+	return fb;
 }
 
 void init(void) {
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_DEPTH_TEST);		
 
-	initFB();
+	fbo = getFB(txt);	
 }
 
-void renderTeapotSceneToTexture(GLuint texture) {
+void renderTeapotSceneToTexture() {
 	
+	// bind framebuffer
+	// everything is now rendered not to screen but to a framebuffer, which is bound to a texture
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+	
+	GLuint attachments[1] = {GL_COLOR_ATTACHMENT0};
+	glDrawBuffers(1,  attachments);
+
 	// perspective view
 	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 	glMatrixMode(GL_PROJECTION);
@@ -103,23 +127,19 @@ void renderTeapotSceneToTexture(GLuint texture) {
 	gluPerspective(60.0f, static_cast<float>(WINDOW_WIDTH)/WINDOW_HEIGHT, 1.0f, 100.0f);
 	glMatrixMode(GL_MODELVIEW);
 
-	// bind framebuffer
-	// everything is now rendered not to screen but to a framebuffer, which is bound to a texture
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo);
-	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, texture, 0);
-
 	// and now draw the teapot!
 	glClearColor (0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear the depth and colour buffers	
 	glPushMatrix();
 	{		
+		
 		glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);				
 		glTranslatef(0.0f, 0.0f, -5.0f);
 		glRotatef(rotation, 1.0f, 1.0f, 1.0f);
 
 		glEnable(GL_LIGHT0);
 		glEnable(GL_LIGHTING);
-				
+
 		glLightfv(GL_LIGHT0, GL_AMBIENT,  light_ambient);
 		glLightfv(GL_LIGHT0, GL_DIFFUSE,  light_diffuse);
 		glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
@@ -130,12 +150,12 @@ void renderTeapotSceneToTexture(GLuint texture) {
 		glMaterialfv(GL_FRONT, GL_SPECULAR,  mat_specular);
 		glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess); 
 
-		glColor3f(0.8, 0.2, 0.1);				
+		glColor3f(0.8, 0.2, 0.1);										
 		glutSolidTeapot(1.5f);
-	
+
 	}
 	glPopMatrix();
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0); // Unbind our texture
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // Unbind our texture
 
 	rotation += 0.25f;
 	if (rotation > 360.0f)
@@ -182,7 +202,7 @@ void drawTexture(GLuint texture)
 void display (void) {
 
 	// render the teapot inside a texture
-	renderTeapotSceneToTexture(fboTexture); // Render our teapot scene into our frame buffer
+	renderTeapotSceneToTexture(); // Render our teapot scene into our frame buffer	
 	
 	glUseProgram(currentProgram);	
 	if (setTime){
@@ -190,7 +210,7 @@ void display (void) {
 		glUniform1f(t, static_cast<float>(glutGet(GLUT_ELAPSED_TIME))*0.001f);
 	}
 	// draw the texture	
-	drawTexture(fboTexture);
+	drawTexture(txt);
 
 	glUseProgram(0);	
 	glutSwapBuffers();
